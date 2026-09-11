@@ -199,6 +199,22 @@ if "settings_version" not in st.session_state:
     st.session_state.settings_version = 0
 
 # =========================
+# API KEYS (for sidebar display)
+# =========================
+
+def _get_secret(name, default=None):
+    try:
+        return st.secrets[name]
+    except Exception:
+        return default
+
+
+GROQ_API_KEY = _get_secret("GROQ_API_KEY")
+GEMINI_API_KEY = _get_secret("GEMINI_API_KEY")
+CEREBRAS_API_KEY = _get_secret("CEREBRAS_API_KEY")
+OPENROUTER_API_KEY = _get_secret("OPENROUTER_API_KEY")
+
+# =========================
 # CSS
 # =========================
 
@@ -452,14 +468,15 @@ st.markdown("""
 
     .provider-badge {
         display: inline-block;
-        padding: 0.25rem 0.7rem;
-        background: rgba(139, 92, 246, 0.12);
-        border: 1px solid rgba(139, 92, 246, 0.3);
+        padding: 0.4rem 0.9rem;
+        background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(236,72,153,0.12));
+        border: 1px solid rgba(139, 92, 246, 0.35);
         border-radius: 999px;
-        font-size: 0.72rem;
+        font-size: 0.78rem;
         color: #c4b5fd;
-        font-weight: 600;
-        margin-left: 0.5rem;
+        font-weight: 700;
+        margin: 0.5rem 0 1rem 0;
+        letter-spacing: 0.3px;
     }
 
     p, span, div, label { color: #d8d3f0; }
@@ -572,6 +589,13 @@ with st.sidebar:
 
         st.markdown("---")
         st.caption("💡 Type naturally: x², x^2, or x**2 all work the same.")
+
+        active = []
+        if GROQ_API_KEY: active.append("Groq")
+        if GEMINI_API_KEY: active.append("Gemini")
+        if CEREBRAS_API_KEY: active.append("Cerebras")
+        if OPENROUTER_API_KEY: active.append("OpenRouter")
+        st.caption(f"🔗 Active: {' · '.join(active) if active else 'None'}")
 
     with tab_history:
         history = load_history()
@@ -741,7 +765,7 @@ with tab1:
         "Enter your equation or expression",
         placeholder="e.g. x² - 5x + 6 = 0",
         key="solve_input",
-        help="You can type it naturally: x², 2x, x^2 — all work. Example: x² - 5x + 6 = 0",
+        help="You can type it naturally: x², 2x, x^2 — all work.",
         label_visibility="collapsed"
     )
 
@@ -765,7 +789,13 @@ with tab1:
                     st.markdown('</div>', unsafe_allow_html=True)
 
                     with st.spinner("Preparing explanation..."):
-                        explanation = explain_solution(question, result, level)
+                        explanation, provider = explain_solution(question, result, level)
+
+                    st.markdown(
+                        f'<span class="provider-badge">⚡ Answered by {provider}</span>',
+                        unsafe_allow_html=True
+                    )
+
                     st.subheader("📖 Step-by-Step Explanation")
                     st.write(explanation)
 
@@ -776,7 +806,6 @@ with tab1:
                     else:
                         render_diagram_from_hint(explanation)
 
-                    # Save to history
                     add_history_entry(
                         "Solve",
                         question,
@@ -804,7 +833,12 @@ with tab2:
             st.warning("Please enter a term first.")
         else:
             with st.spinner("Preparing explanation..."):
-                explanation = explain_definition(term, level)
+                explanation, provider = explain_definition(term, level)
+
+            st.markdown(
+                f'<span class="provider-badge">⚡ Answered by {provider}</span>',
+                unsafe_allow_html=True
+            )
 
             st.markdown('<div class="result-box">', unsafe_allow_html=True)
             st.write(explanation)
@@ -836,7 +870,13 @@ with tab3:
         if st.button("Solve from Image", type="primary", key="img_solve_btn"):
             with st.spinner("Reading and solving..."):
                 try:
-                    result = solve_from_image(image_data, level)
+                    result, provider = solve_from_image(image_data, level)
+
+                    st.markdown(
+                        f'<span class="provider-badge">⚡ Answered by {provider}</span>',
+                        unsafe_allow_html=True
+                    )
+
                     st.markdown('<div class="result-box">', unsafe_allow_html=True)
                     st.write(result)
                     st.markdown('</div>', unsafe_allow_html=True)
