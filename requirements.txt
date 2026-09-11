@@ -2,8 +2,6 @@ streamlit
 groq
 google-genai
 cerebras-cloud-sdk
-mistralai
-pypdf
 python-dotenv
 requests
 pillow
